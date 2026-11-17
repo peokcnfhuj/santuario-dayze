@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>O Santuário da Dayze — Bruxaria Solitária · O Livro de Dayze</title>
+<meta name="description" content="O Santuário da Dayze — lê aqui o livro Bruxaria Solitária: O Livro de Dayze, idealizado por Hélio Castelo. A história de Dayze, os fundamentos, vinte feitiços, os rituais da lua e o grimório.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="estrelas" aria-hidden="true"></canvas>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="ic-lua" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </symbol>
+    <symbol id="ic-estrela" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2 L14.2 9.8 L22 12 L14.2 14.2 L12 22 L9.8 14.2 L2 12 L9.8 9.8 Z"/>
+    </symbol>
+    <symbol id="ic-erva" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22 V8"/><path d="M12 8 C12 4 9 2 5 2 C5 6 8 8 12 8"/>
+      <path d="M12 13 C12 9 15 7 19 7 C19 11 16 13 12 13"/>
+      <path d="M12 18 C12 14 9 12 5 12 C5 16 8 18 12 18"/>
+    </symbol>
+    <symbol id="ic-varinha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 20 L15 9"/><path d="M18 3 L19 5 L21 6 L19 7 L18 9 L17 7 L15 6 L17 5 Z"/>
+      <path d="M20 11 L20.8 12.8 L22.6 13.6 L20.8 14.4 L20 16.2 L19.2 14.4 L17.4 13.6 L19.2 12.8 Z"/>
+    </symbol>
+    <symbol id="ic-caldeirao" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 11 H20 V14 A8 8 0 0 1 4 14 Z"/><path d="M7 22 L8.5 18 M17 22 L15.5 18"/>
+      <circle cx="9" cy="7" r="1"/><circle cx="13" cy="5.5" r="1.2"/><circle cx="16.5" cy="7.5" r="0.9"/>
+    </symbol>
+    <symbol id="ic-vela" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9.5 11 H14.5 V21 H9.5 Z"/><path d="M12 2.5 C14 5 14 6.8 12 8 C10 6.8 10 5 12 2.5 Z"/>
+      <path d="M7 21 H17"/>
+    </symbol>
+    <symbol id="ic-cristal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2 L18 8 L15 22 L9 22 L6 8 Z"/><path d="M12 2 V22"/><path d="M6 8 H18"/>
+    </symbol>
+    <symbol id="ic-livro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 19.5 A2.5 2.5 0 0 1 6.5 17 H20 V3 H6.5 A2.5 2.5 0 0 0 4 5.5 Z"/>
+      <path d="M4 19.5 A2.5 2.5 0 0 0 6.5 22 H20 V17"/>
+    </symbol>
+  </defs>
+</svg>
+
+<main class="wrap">
+  <div class="barra-progresso" role="progressbar" aria-label="Progresso de leitura"><i id="barra-preenchida"></i></div>
+  <p class="progresso-texto" id="progresso-texto"></p>
+
+  <header class="topo">
+    <span class="lua"><img src="img/emblema-lua.jpg" alt="Lua e estrela"></span>
+    <span>
+      <span class="nome">O <b>Santuário</b> da Dayze</span><br>
+      <span class="sub">Bruxaria Solitária · O Livro de Dayze</span>
+    </span>
+  </header>
+
+  <!-- ============ INÍCIO ============ -->
+  <section id="tela-home">
+    <div class="heroi">
+      <img class="capa" src="img/capa-dayze.jpg" alt="Dayze sob a lua cheia, com o seu grimório e a gata cinza">
+      <h1>BRUXARIA<br>SOLITÁRIA</h1>
+      <p class="subtitulo">O Livro de Dayze</p>
+      <p class="autor">Idealizado por <b>Hélio Castelo</b></p>
+      <div class="orn"><svg><use href="#ic-lua"/></svg>◆<svg><use href="#ic-estrela"/></svg></div>
+      <p class="descricao">A história de Dayze, os fundamentos da bruxaria solitária,
+      vinte feitiços com os seus materiais, o seu passo a passo e o seu fundamento,
+      os rituais da lua — e o grimório para anotar o caminho.</p>
+      <div class="orn-linha" aria-hidden="true" style="margin-top:18px">
+        <svg><use href="#ic-lua"/></svg><svg><use href="#ic-erva"/></svg>
+        <svg><use href="#ic-varinha"/></svg><svg><use href="#ic-caldeirao"/></svg>
+        <svg><use href="#ic-vela"/></svg><svg><use href="#ic-cristal"/></svg>
+        <svg><use href="#ic-estrela"/></svg>
+      </div>
+    </div>
+
+    <div class="botoes">
+      <button class="btn" id="btn-comecar"><svg><use href="#ic-livro"/></svg><span>Começar a ler</span></button>
+      <button class="btn fantasma" id="btn-continuar"><svg><use href="#ic-lua"/></svg><span>Continuar lendo</span></button>
+      <button class="btn fantasma" id="btn-sumario-home"><span>Ver o sumário</span></button>
+      <a class="btn prata" href="livro-dayze-bruxaria-solitaria.pdf" download="Bruxaria Solitária — O Livro de Dayze.pdf"><span>Salvar em PDF</span></a>
+      <button class="btn prata" id="btn-drive"><span>Acessar pelo Drive</span></button>
+    </div>
+    <p class="nota-drive" id="nota-drive"></p>
+  </section>
+
+  <!-- ============ LEITOR ============ -->
+  <section id="tela-ler" class="escondido">
+    <article class="leitor moldura-pagina">
+      <div class="cap-parte" id="cap-parte"></div>
+      <h2 class="cap-titulo" id="cap-titulo"></h2>
+      <p class="cap-sub" id="cap-sub"></p>
+      <div id="cap-conteudo"></div>
+      <nav class="nav-cap" aria-label="Navegação do livro">
+        <button class="btn fantasma" id="btn-ant">← Anterior</button>
+        <button class="btn fantasma meio" id="btn-sumario-ler">Sumário</button>
+        <button class="btn" id="btn-prox">Próximo →</button>
+      </nav>
+      <div class="botoes" style="margin-top:14px">
+        <button class="btn prata" id="btn-voltar-home"><span>Voltar ao início</span></button>
+      </div>
+    </article>
+  </section>
+
+  <footer class="rodape">
+    <span class="lua-peq">☾</span><br>
+    A lua chama quem escuta sozinha.<br>
+    <b>Feito pela PVSR HOLDING TECH</b>
+  </footer>
+</main>
+
+<!-- ============ SUMÁRIO ============ -->
+<div class="modal escondido" id="modal-sumario" role="dialog" aria-label="Sumário do livro">
+  <div class="caixa">
+    <h2>Sumário</h2>
+    <p class="modal-sub">Toca num capítulo para o abrir · ✓ é o que já leste</p>
+    <div id="lista-sumario"></div>
+    <button class="btn fantasma fechar" id="btn-fechar-sumario">Fechar</button>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
