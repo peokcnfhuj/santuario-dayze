@@ -288,7 +288,7 @@
     var tex = new THREE.CanvasTexture(cv);
     tex.encoding = THREE.sRGBEncoding;
     var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
-    var escala = grande ? 2.6 : 1.9;
+    var escala = grande ? 1.5 : 1.05;
     sp.scale.set(escala, escala * h / w, 1);
     return sp;
   }
@@ -321,7 +321,7 @@
   var atual = null;
   var manager = new THREE.LoadingManager();
   manager.onProgress = function(url, nCarregados, nTotal){
-    mostraStatus('A carregar as peças… ' + nCarregados + ' de ' + nTotal, (nCarregados / nTotal) * 100);
+    mostraStatus('A carregar as peças… ' + carregadas + ' de ' + PECAS.length, (carregadas / PECAS.length) * 100);
   };
   manager.onLoad = function(){
     if (falhadas.length) {
@@ -372,7 +372,7 @@
 
     var topoModelo = alturaPedestal + tam.y * (peca.deitada ? 0.35 : 1);
     var rotulo = etiqueta(peca.nome, !!peca.central);
-    rotulo.position.set(pos.x, topoModelo + (peca.central ? 0.55 : 0.45), pos.z);
+    rotulo.position.set(pos.x, topoModelo + (peca.central ? 0.35 : 0.3), pos.z);
     scene.add(rotulo);
 
     var c = new THREE.Box3().setFromObject(grupo);
