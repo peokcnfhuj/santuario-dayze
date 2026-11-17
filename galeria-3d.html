@@ -127,7 +127,7 @@
       desc:'O caldeirão de ferro da Dayze. Nele ela prepara banhos, chás e poções — o coração da cozinha mágica da casa.' },
     { id:'varinha', nome:'Varinha', arquivo:'modelos/varinha.glb', escala:1.15, deitada:true,
       desc:'A varinha de madeira, com a ponta que brilha. Serve para dirigir a intenção e desenhar o círculo antes de cada feitiço.' },
-    { id:'cristal', nome:'Cristal de ametista', arquivo:'modelos/cristal.glb', escala:1.15,
+    { id:'cristal', nome:'Cristal de ametista', rotulo:'Cristal', arquivo:'modelos/cristal.glb', escala:1.15,
       desc:'A ponta de ametista. Pedra da intuição e da calma: fica no altar para limpar a energia e ajudar nos sonhos.' },
     { id:'vela', nome:'Vela', arquivo:'modelos/vela.glb', escala:1.15,
       desc:'A vela branca do ritual. A chama acesa abre o trabalho, protege a casa e leva o pedido até a lua.' },
@@ -288,7 +288,9 @@
     var tex = new THREE.CanvasTexture(cv);
     tex.encoding = THREE.sRGBEncoding;
     var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
-    var escala = grande ? 1.5 : 1.05;
+    var escala = grande ? 1.15 : 1.0;
+    sp.userData.base = escala;
+    sp.userData.ratio = h / w;
     sp.scale.set(escala, escala * h / w, 1);
     return sp;
   }
@@ -317,6 +319,7 @@
 
   /* ============ CARREGAR AS PEÇAS ============ */
   var grupos = {};
+  var rotulos = [];
   var carregadas = 0, falhadas = [];
   var atual = null;
   var manager = new THREE.LoadingManager();
@@ -371,9 +374,10 @@
     scene.add(grupo);
 
     var topoModelo = alturaPedestal + tam.y * (peca.deitada ? 0.35 : 1);
-    var rotulo = etiqueta(peca.nome, !!peca.central);
+    var rotulo = etiqueta(peca.rotulo || peca.nome, !!peca.central);
     rotulo.position.set(pos.x, topoModelo + (peca.central ? 0.35 : 0.3), pos.z);
     scene.add(rotulo);
+    rotulos.push(rotulo);
 
     var c = new THREE.Box3().setFromObject(grupo);
     var cc = new THREE.Vector3(); c.getCenter(cc);
@@ -533,6 +537,16 @@
         if (tween.t >= 1) tween = null;
       }
       controls.update();
+      /* rótulos: tamanho aparente constante e só na vista geral — ao focar uma peça eles somem (o nome já está no painel) */
+      var longe = camera.position.distanceTo(controls.target) > 7;
+      rotulos.forEach(function(sp){
+        sp.visible = longe;
+        if (longe) {
+          var d = camera.position.distanceTo(sp.position);
+          var s = sp.userData.base * (d / 10.5);
+          sp.scale.set(s, s * sp.userData.ratio, 1);
+        }
+      });
       renderer.render(scene, camera);
     } catch(err) { /* mantém o laço vivo */ }
   }
