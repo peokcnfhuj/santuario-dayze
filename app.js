@@ -12,6 +12,7 @@
   var DRIVE_LINK = "https://drive.google.com/file/d/1xldIlEH0Wxg_dC6EGeV89y17tk1kSOeo/view?usp=drivesdk";
 
   var LS_ULTIMO = "santuario-dayze-ultimo";
+  var LS_PAGINA = "santuario-dayze-pagina";
   var LS_LIDOS = "santuario-dayze-lidos";
   var LS_GRIMORIO = "santuario-dayze-grimorio";
 
@@ -28,17 +29,23 @@
     if (!jaLido(id)) { lidos.push(id); salvarJSON(LS_LIDOS, lidos); }
     atualizarProgresso();
   }
+  /* modo livro: o progresso é em páginas (de 100), refletindo onde a pessoa parou */
+  function paginaOndeParou() {
+    var ultimo = lerJSON(LS_ULTIMO, null);
+    var u = ultimo && POR_ID[ultimo];
+    return u ? (u.pagina || 1) : 0;
+  }
   function atualizarProgresso() {
-    var total = UNITS.length, n = lidos.length;
-    var pct = total ? Math.round((n / total) * 100) : 0;
+    var pag = paginaOndeParou();
+    var pct = Math.min(100, Math.max(0, pag));
     var barra = $("barra-preenchida"), txt = $("progresso-texto");
     if (barra) barra.style.width = pct + "%";
-    if (txt) txt.innerHTML = "Você já leu <b>" + n + " de " + total + "</b> partes · " + pct + "% do livro";
+    if (txt) txt.innerHTML = "Você já leu <b>" + pag + " de 100</b> páginas · " + pct + "% do livro";
     var btn = $("btn-continuar");
     if (btn) {
       var ultimo = lerJSON(LS_ULTIMO, null);
       if (ultimo && POR_ID[ultimo]) {
-        btn.querySelector("span").textContent = "Continuar lendo — " + POR_ID[ultimo].title;
+        btn.querySelector("span").textContent = "Continuar lendo — Página " + (POR_ID[ultimo].pagina || 1);
         btn.disabled = false;
       } else {
         btn.querySelector("span").textContent = "Começar a ler";
@@ -61,7 +68,7 @@
     var ant = UNITS[i - 1], prox = UNITS[i + 1];
     $("cap-parte").textContent = u.part;
     $("cap-titulo").textContent = u.title;
-    $("cap-sub").textContent = (i + 1) + " de " + UNITS.length;
+    $("cap-sub").textContent = "Página " + (u.pagina || 1) + " de 100";
     $("cap-conteudo").innerHTML = u.html;
     var bAnt = $("btn-ant"), bProx = $("btn-prox");
     bAnt.disabled = !ant;
@@ -71,6 +78,7 @@
     if (location.hash !== "#/" + u.id) history.replaceState(null, "", "#/" + u.id);
     mostrar("tela-ler");
     salvarJSON(LS_ULTIMO, u.id);
+    salvarJSON(LS_PAGINA, u.pagina || 1);
     marcarLido(u.id);
     if (u.kind === "grimorio") ligarGrimorio();
   }
@@ -88,6 +96,7 @@
     UNITS.forEach(function (u) {
       if (u.part !== parteAtual) { parteAtual = u.part; html += "<h4>" + parteAtual + "</h4><ul>"; }
       html += '<li><a href="#/' + u.id + '" data-id="' + u.id + '"><span>' + u.title +
+        '</span><span style="color:#e8c85a;white-space:nowrap">p. ' + (u.pagina || 1) +
         '</span><span class="ok">' + (jaLido(u.id) ? "✓" : "") + "</span></a></li>";
       var prox = UNITS[u._i + 1];
       if (!prox || prox.part !== parteAtual) html += "</ul>";
