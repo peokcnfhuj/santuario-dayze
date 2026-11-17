@@ -13,7 +13,7 @@
   .vitrine{margin-top:26px}
   .vitrine-quadro{position:relative;height:min(58vh,520px);min-height:340px;
     border:1px solid var(--borda);border-radius:14px;overflow:hidden;
-    background:radial-gradient(120% 90% at 50% 30%,#171224 0%,#0b0714 55%,#060409 100%);
+    background:radial-gradient(120% 90% at 50% 30%,#0d0a1e 0%,#070512 55%,#020108 100%);
     box-shadow:0 10px 30px rgba(0,0,0,.5)}
   #vitrine-gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
   #vitrine-gl:active{cursor:grabbing}
@@ -206,7 +206,7 @@
   var camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
   camera.position.set(0, 3.4, 10.5);
 
-  /* luzes — sem sombras; calor das velas + frio do luar, como na galeria */
+  /* luzes — sem sombras; dourado quente + frio azulado do espaço */
   scene.add(new THREE.AmbientLight(0xffe9c4, 0.42));
   var chave = new THREE.DirectionalLight(0xfff1d6, 1.35);
   chave.position.set(5, 8, 6);
@@ -218,51 +218,116 @@
   rim.position.set(-3, 6, -7);
   scene.add(rim);
 
-  var ouroMat = new THREE.MeshStandardMaterial({ color: 0xC9A227, roughness: 0.35, metalness: 0.8 });
+  /* a Dayze flutua no espaço — sem pedestal; o grupo fica acessível ao tick para o balanço */
+  var grupoDayze = null;
+  var ALTURA_FLUTUANTE = 0.4;
+  var cintilantes = [];
 
-  /* pedestal da Dayze — igual ao da galeria */
-  var pedraMat = new THREE.MeshStandardMaterial({ color: 0x2a2438, roughness: 0.85, metalness: 0.05 });
-  var pedraEscura = new THREE.MeshStandardMaterial({ color: 0x1a1526, roughness: 0.9, metalness: 0.05 });
-  function pedestal(raio, altura){
-    var g = new THREE.Group();
-    var base = new THREE.Mesh(new THREE.CylinderGeometry(raio * 1.12, raio * 1.25, 0.16, 40), pedraEscura);
-    base.position.y = 0.08;
-    g.add(base);
-    var coluna = new THREE.Mesh(new THREE.CylinderGeometry(raio * 0.82, raio * 0.95, altura - 0.3, 40), pedraMat);
-    coluna.position.y = 0.16 + (altura - 0.3) / 2;
-    g.add(coluna);
-    var topo = new THREE.Mesh(new THREE.CylinderGeometry(raio, raio * 0.88, 0.14, 40), pedraMat);
-    topo.position.y = altura - 0.07;
-    g.add(topo);
-    var fio = new THREE.Mesh(new THREE.TorusGeometry(raio * 0.96, 0.022, 8, 48), ouroMat);
-    fio.rotation.x = Math.PI / 2;
-    fio.position.y = altura - 0.14;
-    g.add(fio);
-    return g;
-  }
-  var ALTURA_PEDESTAL = 0.85;
-  scene.add(pedestal(1.5, ALTURA_PEDESTAL));
-  var anel = new THREE.Mesh(new THREE.RingGeometry(1.92, 1.98, 64), ouroMat);
-  anel.rotation.x = -Math.PI / 2;
-  anel.position.y = 0.02;
-  scene.add(anel);
-
-  /* estrelinhas douradas e brancas ao fundo */
-  (function estrelas(){
-    var n = 140, pos = new Float32Array(n * 3), cores = new Float32Array(n * 3);
-    var c1 = new THREE.Color(0xffffff), c2 = new THREE.Color(0xe8c85a), c;
+  /* céu do espaço — campo de estrelas denso, com tamanhos e brilhos variados */
+  function camadaEstrelas(n, tamanho, corA, corB, opacidade){
+    var pos = new Float32Array(n * 3), cores = new Float32Array(n * 3);
+    var c1 = new THREE.Color(corA), c2 = new THREE.Color(corB), c;
     for (var i = 0; i < n; i++){
-      var t = Math.random() * Math.PI * 2, p = Math.random() * Math.PI * 0.42, r = 10 + Math.random() * 4;
+      var t = Math.random() * Math.PI * 2, p = Math.acos(2 * Math.random() - 1), r = 14 + Math.random() * 12;
       pos[i*3]   = r * Math.sin(p) * Math.cos(t);
-      pos[i*3+1] = 1.5 + r * Math.cos(p) * 0.7;
+      pos[i*3+1] = r * Math.cos(p);
       pos[i*3+2] = r * Math.sin(p) * Math.sin(t);
-      c = Math.random() < 0.5 ? c1 : c2;
-      cores[i*3] = c.r; cores[i*3+1] = c.g; cores[i*3+2] = c.b;
+      c = Math.random() < 0.6 ? c1 : c2;
+      var b = 0.55 + Math.random() * 0.45;
+      cores[i*3] = c.r * b; cores[i*3+1] = c.g * b; cores[i*3+2] = c.b * b;
     }
     var g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     g.setAttribute('color', new THREE.BufferAttribute(cores, 3));
-    scene.add(new THREE.Points(g, new THREE.PointsMaterial({ size: 0.09, vertexColors: true, transparent: true, opacity: 0.85, sizeAttenuation: true })));
+    var m = new THREE.PointsMaterial({ size: tamanho, vertexColors: true, transparent: true, opacity: opacidade, sizeAttenuation: true, depthWrite: false });
+    scene.add(new THREE.Points(g, m));
+    return m;
+  }
+  camadaEstrelas(430, 0.07, 0xffffff, 0xcfe0ff, 0.9);   /* miúdas, brancas e azuladas */
+  camadaEstrelas(190, 0.13, 0xffffff, 0xe8c85a, 0.95);  /* médias, algumas douradas */
+  camadaEstrelas(55, 0.22, 0xffffff, 0xffd9a0, 1.0);    /* grandes e brilhantes */
+  cintilantes.push(camadaEstrelas(70, 0.16, 0xffffff, 0xd9c2ff, 0.9));
+  cintilantes.push(camadaEstrelas(45, 0.11, 0xffffff, 0xffc2e0, 0.85));
+
+  /* nebulosas — textura procedural de canvas, sem nada externo */
+  function texturaNebulosa(cores){
+    var cv = document.createElement('canvas'); cv.width = 256; cv.height = 256;
+    var ctx = cv.getContext('2d');
+    ctx.clearRect(0, 0, 256, 256);
+    for (var i = 0; i < 8; i++){
+      var x = 55 + Math.random() * 146, y = 55 + Math.random() * 146, r = 42 + Math.random() * 72;
+      var g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, cores[i % cores.length]);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalAlpha = 0.22 + Math.random() * 0.28;
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 256, 256);
+    }
+    return new THREE.CanvasTexture(cv);
+  }
+  function nebulosa(cores, x, y, z, escala, opacidade){
+    var s = new THREE.Sprite(new THREE.SpriteMaterial({ map: texturaNebulosa(cores), transparent: true, opacity: opacidade, blending: THREE.AdditiveBlending, depthWrite: false }));
+    s.position.set(x, y, z);
+    s.scale.set(escala, escala * 0.75, 1);
+    scene.add(s);
+  }
+  nebulosa(['rgba(123,92,255,0.6)', 'rgba(74,108,255,0.5)'], -13, 6, -20, 20, 0.5);
+  nebulosa(['rgba(255,122,217,0.55)', 'rgba(123,92,255,0.5)'], 12, -3, -19, 17, 0.45);
+  nebulosa(['rgba(74,108,255,0.55)', 'rgba(160,120,255,0.5)'], 2, 8, -22, 22, 0.4);
+  nebulosa(['rgba(232,200,90,0.4)', 'rgba(255,122,217,0.4)'], -4, -7, -18, 13, 0.35);
+
+  /* planeta com anéis ao fundo — faixas roxas e douradas, na paleta do site */
+  (function planeta(){
+    var cv = document.createElement('canvas'); cv.width = 512; cv.height = 256;
+    var ctx = cv.getContext('2d');
+    var bandas = ['#3d2a6e', '#6b4fae', '#c9a227', '#8f6fc9', '#2c1f52', '#d9b45b', '#5b3f9e', '#7a5cc0'];
+    var y = 0, i = 0;
+    while (y < 256){
+      var h = 14 + Math.random() * 30;
+      ctx.fillStyle = bandas[i % bandas.length];
+      ctx.fillRect(0, y, 512, h);
+      y += h; i++;
+    }
+    ctx.globalAlpha = 0.18; ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 512, 26);
+    var tex = new THREE.CanvasTexture(cv);
+    var grupoPlaneta = new THREE.Group();
+    var corpo = new THREE.Mesh(
+      new THREE.SphereGeometry(2.3, 40, 28),
+      new THREE.MeshStandardMaterial({ map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.32, roughness: 0.9, metalness: 0 })
+    );
+    grupoPlaneta.add(corpo);
+    var cvAnel = document.createElement('canvas'); cvAnel.width = 256; cvAnel.height = 256;
+    var ca = cvAnel.getContext('2d');
+    ca.clearRect(0, 0, 256, 256);
+    for (var rr = 74; rr <= 126; rr += 3){
+      ca.beginPath();
+      ca.arc(128, 128, rr, 0, Math.PI * 2);
+      ca.strokeStyle = 'rgba(' + (200 + Math.floor(Math.random() * 55)) + ',' + (170 + Math.floor(Math.random() * 50)) + ',' + (80 + Math.floor(Math.random() * 60)) + ',' + (0.35 + Math.random() * 0.45) + ')';
+      ca.lineWidth = 2.4;
+      ca.stroke();
+    }
+    var texAnel = new THREE.CanvasTexture(cvAnel);
+    var anelPlaneta = new THREE.Mesh(
+      new THREE.RingGeometry(2.95, 5.0, 72),
+      new THREE.MeshBasicMaterial({ map: texAnel, transparent: true, side: THREE.DoubleSide, depthWrite: false, opacity: 0.92 })
+    );
+    anelPlaneta.rotation.x = -Math.PI / 2 + 0.38;
+    grupoPlaneta.add(anelPlaneta);
+    /* brilho dourado suave atrás do planeta */
+    var cvBrilho = document.createElement('canvas'); cvBrilho.width = 128; cvBrilho.height = 128;
+    var cb = cvBrilho.getContext('2d');
+    var gb = cb.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gb.addColorStop(0, 'rgba(232,200,90,0.55)');
+    gb.addColorStop(1, 'rgba(232,200,90,0)');
+    cb.fillStyle = gb; cb.fillRect(0, 0, 128, 128);
+    var brilho = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cvBrilho), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.5 }));
+    brilho.scale.set(13, 13, 1);
+    brilho.position.set(0, 0, -0.5);
+    grupoPlaneta.add(brilho);
+    grupoPlaneta.position.set(-8.5, 4.2, -17);
+    grupoPlaneta.rotation.z = 0.22;
+    scene.add(grupoPlaneta);
   })();
 
   var controls = new THREE.OrbitControls(camera, canvas);
@@ -315,7 +380,8 @@
       obj.position.y += tam.y / 2;
       var grupo = new THREE.Group();
       grupo.add(obj);
-      grupo.position.set(0, ALTURA_PEDESTAL, 0);
+      grupo.position.set(0, ALTURA_FLUTUANTE, 0);
+      grupoDayze = grupo;
       scene.add(grupo);
       var c = new THREE.Box3().setFromObject(grupo);
       var cc = new THREE.Vector3(); c.getCenter(cc);
@@ -352,6 +418,11 @@
         var off = camera.position.clone().sub(controls.target);
         off.applyAxisAngle(EIXO_Y, dt * 0.12);
         camera.position.copy(controls.target).add(off);
+      }
+      /* flutuação suave da Dayze + cintilar das estrelas */
+      if (grupoDayze) grupoDayze.position.y = ALTURA_FLUTUANTE + Math.sin(agora * 0.7) * 0.14;
+      for (var ci = 0; ci < cintilantes.length; ci++){
+        cintilantes[ci].opacity = 0.5 + 0.4 * Math.sin(agora * (1.4 + ci * 0.7) + ci * 2.1);
       }
       dimensiona();
       controls.update();
