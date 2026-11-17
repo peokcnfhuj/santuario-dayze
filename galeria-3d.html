@@ -123,7 +123,7 @@
 
   /* ============ AS PEÇAS ============ */
   var PECAS = [
-    { id:'dayze', nome:'Dayze', arquivo:'modelos/dayze.glb', central:true, escala:2.0,
+    { id:'dayze', nome:'Dayze', arquivo:'modelos/dayze.glb', central:true, escala:3.0,
       desc:'A bruxa solitária. Cabelo escuro com uma mecha prateada, olhos verdes e o grimório sempre nas mãos. Vive sozinha numa casa à beira da floresta, trabalha com a lua e as ervas, e tem uma gata cinza como familiar.' },
     { id:'caldeirao', nome:'Caldeirão', arquivo:'modelos/caldeirao.glb', escala:1.15,
       desc:'O caldeirão de ferro da Dayze. Nele ela prepara banhos, chás e poções — o coração da cozinha mágica da casa.' },
@@ -635,7 +635,7 @@
 
     var pos = posicaoDaPeca(peca, i);
     var alturaPedestal = peca.central ? 0.85 : 0.5;
-    var raioPedestal = peca.central ? 1.25 : 0.72;
+    var raioPedestal = peca.central ? 1.5 : 0.72;
     var ped = pedestal(raioPedestal, alturaPedestal);
     ped.position.set(pos.x, 0, pos.z);
     scene.add(ped);

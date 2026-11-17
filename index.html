@@ -6,6 +6,26 @@
 <title>O Santuário da Dayze — Bruxaria Solitária · O Livro de Dayze</title>
 <meta name="description" content="O Santuário da Dayze — lê aqui o livro Bruxaria Solitária: O Livro de Dayze, idealizado por Hélio Castelo. A história de Dayze, os fundamentos, vinte feitiços, os rituais da lua e o grimório.">
 <link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<style>
+  /* vitrine 3D da Dayze na home — mesmo padrão da galeria */
+  .vitrine{margin-top:26px}
+  .vitrine-quadro{position:relative;height:min(58vh,520px);min-height:340px;
+    border:1px solid var(--borda);border-radius:14px;overflow:hidden;
+    background:radial-gradient(120% 90% at 50% 30%,#171224 0%,#0b0714 55%,#060409 100%);
+    box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  #vitrine-gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+  #vitrine-gl:active{cursor:grabbing}
+  .vitrine-dica{position:absolute;right:14px;top:12px;background:rgba(6,4,9,.7);color:var(--dourado-claro);
+    border-radius:99px;padding:5px 12px;font-size:14px;pointer-events:none}
+  .vitrine-status{position:absolute;left:14px;bottom:12px;max-width:92%;
+    background:rgba(6,4,9,.82);color:var(--texto);border:1px solid var(--borda);
+    border-radius:10px;padding:8px 12px;font-size:15px;line-height:1.4}
+  .vitrine-status.erro{border-color:#b03a2e}
+  .vitrine-legenda{text-align:center;color:var(--texto-suave);font-style:italic;font-size:17px;margin:14px 0 0}
+  .vitrine-btn{max-width:460px;margin:14px auto 0}
+</style>
 </head>
 <body>
 <canvas id="estrelas" aria-hidden="true"></canvas>
@@ -76,6 +96,17 @@
       </div>
     </div>
 
+    <!-- ============ VITRINE 3D — a Dayze já aparece em 3D ============ -->
+    <section class="vitrine" id="vitrine-3d" aria-label="Dayze em 3D">
+      <div class="vitrine-quadro" id="vitrine-quadro">
+        <canvas id="vitrine-gl"></canvas>
+        <div class="vitrine-dica">☾ Arrasta para girar · pinça para zoom</div>
+        <div class="vitrine-status" id="vitrine-status">A Dayze está a chegar…</div>
+      </div>
+      <p class="vitrine-legenda">Dayze, a bruxa solitária — gire para ver em 360°</p>
+      <a class="btn fantasma vitrine-btn" href="galeria-3d.html"><span>Ver a galeria 3D completa</span></a>
+    </section>
+
     <div class="botoes">
       <button class="btn" id="btn-comecar"><svg><use href="#ic-livro"/></svg><span>Começar a ler</span></button>
       <button class="btn fantasma" id="btn-continuar"><svg><use href="#ic-lua"/></svg><span>Continuar lendo</span></button>
@@ -124,5 +155,184 @@
 
 <script src="data.js"></script>
 <script src="app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+(function(){
+  "use strict";
+  /* Vitrine 3D da Dayze na home — só o modelo dela (modelos/dayze.glb),
+     mesmo padrão da galeria: rotação automática, arrastar para girar,
+     pinça/scroll para zoom, sem sombras, leve no celular. */
+  var quadro = document.getElementById('vitrine-quadro');
+  var canvas = document.getElementById('vitrine-gl');
+  var statusEl = document.getElementById('vitrine-status');
+  if (!quadro || !canvas || !statusEl) return;
+
+  function mostraErro(msg){
+    statusEl.classList.add('erro');
+    statusEl.textContent = msg;
+  }
+
+  if (!window.THREE) {
+    mostraErro('Não consegui abrir o 3D. Verifica a ligação e recarrega — ou vê a galeria completa no botão abaixo.');
+    return;
+  }
+  if (!THREE.GLTFLoader || !THREE.OrbitControls) {
+    mostraErro('Não consegui abrir o 3D (falta uma parte). Recarrega a página — ou vê a galeria completa no botão abaixo.');
+    return;
+  }
+
+  var ehToque = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+  var renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !ehToque, alpha: true, powerPreference: 'high-performance' });
+  } catch(e) {
+    mostraErro('Este aparelho não abriu o 3D (WebGL). Vê a galeria completa no botão abaixo.');
+    return;
+  }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, ehToque ? 1.25 : 1.5));
+  renderer.setClearColor(0x000000, 0);
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+  camera.position.set(0, 3.4, 10.5);
+
+  /* luzes — sem sombras; calor das velas + frio do luar, como na galeria */
+  scene.add(new THREE.AmbientLight(0xffe9c4, 0.42));
+  var chave = new THREE.DirectionalLight(0xfff1d6, 1.35);
+  chave.position.set(5, 8, 6);
+  scene.add(chave);
+  var fill = new THREE.DirectionalLight(0xbfd0ff, 0.5);
+  fill.position.set(-6, 4, 5);
+  scene.add(fill);
+  var rim = new THREE.DirectionalLight(0xffd9a0, 0.8);
+  rim.position.set(-3, 6, -7);
+  scene.add(rim);
+
+  var ouroMat = new THREE.MeshStandardMaterial({ color: 0xC9A227, roughness: 0.35, metalness: 0.8 });
+
+  /* pedestal da Dayze — igual ao da galeria */
+  var pedraMat = new THREE.MeshStandardMaterial({ color: 0x2a2438, roughness: 0.85, metalness: 0.05 });
+  var pedraEscura = new THREE.MeshStandardMaterial({ color: 0x1a1526, roughness: 0.9, metalness: 0.05 });
+  function pedestal(raio, altura){
+    var g = new THREE.Group();
+    var base = new THREE.Mesh(new THREE.CylinderGeometry(raio * 1.12, raio * 1.25, 0.16, 40), pedraEscura);
+    base.position.y = 0.08;
+    g.add(base);
+    var coluna = new THREE.Mesh(new THREE.CylinderGeometry(raio * 0.82, raio * 0.95, altura - 0.3, 40), pedraMat);
+    coluna.position.y = 0.16 + (altura - 0.3) / 2;
+    g.add(coluna);
+    var topo = new THREE.Mesh(new THREE.CylinderGeometry(raio, raio * 0.88, 0.14, 40), pedraMat);
+    topo.position.y = altura - 0.07;
+    g.add(topo);
+    var fio = new THREE.Mesh(new THREE.TorusGeometry(raio * 0.96, 0.022, 8, 48), ouroMat);
+    fio.rotation.x = Math.PI / 2;
+    fio.position.y = altura - 0.14;
+    g.add(fio);
+    return g;
+  }
+  var ALTURA_PEDESTAL = 0.85;
+  scene.add(pedestal(1.5, ALTURA_PEDESTAL));
+  var anel = new THREE.Mesh(new THREE.RingGeometry(1.92, 1.98, 64), ouroMat);
+  anel.rotation.x = -Math.PI / 2;
+  anel.position.y = 0.02;
+  scene.add(anel);
+
+  /* estrelinhas douradas e brancas ao fundo */
+  (function estrelas(){
+    var n = 140, pos = new Float32Array(n * 3), cores = new Float32Array(n * 3);
+    var c1 = new THREE.Color(0xffffff), c2 = new THREE.Color(0xe8c85a), c;
+    for (var i = 0; i < n; i++){
+      var t = Math.random() * Math.PI * 2, p = Math.random() * Math.PI * 0.42, r = 10 + Math.random() * 4;
+      pos[i*3]   = r * Math.sin(p) * Math.cos(t);
+      pos[i*3+1] = 1.5 + r * Math.cos(p) * 0.7;
+      pos[i*3+2] = r * Math.sin(p) * Math.sin(t);
+      c = Math.random() < 0.5 ? c1 : c2;
+      cores[i*3] = c.r; cores[i*3+1] = c.g; cores[i*3+2] = c.b;
+    }
+    var g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(cores, 3));
+    scene.add(new THREE.Points(g, new THREE.PointsMaterial({ size: 0.09, vertexColors: true, transparent: true, opacity: 0.85, sizeAttenuation: true })));
+  })();
+
+  var controls = new THREE.OrbitControls(camera, canvas);
+  controls.target.set(0, 1.5, 0);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.enablePan = false;
+  controls.minDistance = 2.5;
+  controls.maxDistance = 12;
+  controls.maxPolarAngle = 1.52;
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 0.7;
+  canvas.addEventListener('pointerdown', function(){ controls.autoRotate = false; }, { once: true });
+
+  function dimensiona(){
+    var w = quadro.clientWidth, h = quadro.clientHeight;
+    if (!w || !h) return;
+    var s = renderer.getSize(new THREE.Vector2());
+    if (s.x !== w || s.y !== h){
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+  }
+  window.addEventListener('resize', dimensiona);
+  window.addEventListener('orientationchange', function(){ setTimeout(dimensiona, 300); });
+
+  new THREE.GLTFLoader().load('modelos/dayze.glb',
+    function(gltf){
+      var obj = gltf.scene;
+      obj.scale.setScalar(3.0);
+      var caixa = new THREE.Box3().setFromObject(obj);
+      var tam = new THREE.Vector3(); caixa.getSize(tam);
+      var centro = new THREE.Vector3(); caixa.getCenter(centro);
+      obj.position.sub(centro);
+      obj.position.y += tam.y / 2;
+      var grupo = new THREE.Group();
+      grupo.add(obj);
+      grupo.position.set(0, ALTURA_PEDESTAL, 0);
+      scene.add(grupo);
+      var c = new THREE.Box3().setFromObject(grupo);
+      var cc = new THREE.Vector3(); c.getCenter(cc);
+      var t2 = new THREE.Vector3(); c.getSize(t2);
+      var tamanho = Math.max(t2.x, t2.y, t2.z);
+      controls.target.copy(cc);
+      var dist = Math.min(9, Math.max(3.2, tamanho * 3.4));
+      var dir = camera.position.clone().sub(controls.target).normalize();
+      camera.position.copy(cc).add(dir.multiplyScalar(dist));
+      setTimeout(function(){ statusEl.style.display = 'none'; }, 1200);
+      dimensiona();
+    },
+    undefined,
+    function(){
+      mostraErro('Não consegui carregar a Dayze em 3D. Vê a galeria completa no botão abaixo.');
+    }
+  );
+
+  function visivel(){
+    if (!quadro.offsetParent) return false;
+    var r = quadro.getBoundingClientRect();
+    return r.bottom > 0 && r.top < window.innerHeight && r.width > 0 && r.height > 0;
+  }
+  function tick(){
+    requestAnimationFrame(tick);
+    try {
+      if (!visivel()) return;
+      dimensiona();
+      controls.update();
+      renderer.render(scene, camera);
+    } catch(err) { /* mantém o laço vivo */ }
+  }
+  dimensiona();
+  tick();
+})();
+</script>
 </body>
 </html>
