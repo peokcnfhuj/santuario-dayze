@@ -174,34 +174,109 @@
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, ehToque ? 1.25 : 1.5));
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 1.1;
 
   var scene = new THREE.Scene();
   scene.background = new THREE.Color(0x060409);
-  scene.fog = new THREE.Fog(0x060409, 14, 30);
+  scene.fog = new THREE.Fog(0x060409, 16, 38);
 
   var camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
   camera.position.set(0, 3.4, 10.5);
 
-  /* luzes — sem sombras, para o celular correr leve */
-  scene.add(new THREE.AmbientLight(0xffe9c4, 0.55));
-  var chave = new THREE.DirectionalLight(0xfff1d6, 1.5);
+  /* luzes — sem sombras, para o celular correr leve; calor das velas + frio do luar */
+  scene.add(new THREE.AmbientLight(0xffe9c4, 0.42));
+  var chave = new THREE.DirectionalLight(0xfff1d6, 1.35);
   chave.position.set(5, 8, 6);
   scene.add(chave);
   var fill = new THREE.DirectionalLight(0xbfd0ff, 0.5);
   fill.position.set(-6, 4, 5);
   scene.add(fill);
-  var rim = new THREE.DirectionalLight(0xffd9a0, 0.9);
+  var rim = new THREE.DirectionalLight(0xffd9a0, 0.8);
   rim.position.set(-3, 6, -7);
   scene.add(rim);
+  var luar = new THREE.DirectionalLight(0xaac4ff, 0.85);
+  luar.position.set(0, 7, -12);
+  scene.add(luar);
 
-  /* ============ CHÃO, ANÉIS E ESTRELAS ============ */
+  /* ============ CHÃO DE MADEIRA, TAPETE, ANÉIS E ESTRELAS ============ */
+  function texturaMadeira(){
+    var cv = document.createElement('canvas');
+    cv.width = 512; cv.height = 512;
+    var ctx = cv.getContext('2d');
+    var tons = ['#4a3220', '#3f2b1b', '#543d27', '#46311f'];
+    var altTabua = 64;
+    for (var i = 0; i < 8; i++){
+      ctx.fillStyle = tons[i % tons.length];
+      ctx.fillRect(0, i * altTabua, 512, altTabua);
+      ctx.strokeStyle = 'rgba(20,12,6,0.35)';
+      ctx.lineWidth = 1.5;
+      for (var v = 0; v < 5; v++){
+        ctx.beginPath();
+        var y0 = i * altTabua + 8 + v * 11 + Math.random() * 4;
+        ctx.moveTo(0, y0);
+        for (var x = 0; x <= 512; x += 64){
+          ctx.lineTo(x, y0 + Math.sin(x * 0.02 + v) * 3 + (Math.random() - 0.5) * 2);
+        }
+        ctx.stroke();
+      }
+      ctx.fillStyle = 'rgba(12,7,3,0.8)';
+      ctx.fillRect(0, i * altTabua, 512, 3);
+      var jx = (i % 2) ? 170 : 380;
+      ctx.fillRect(jx, i * altTabua, 3, altTabua);
+    }
+    var tex = new THREE.CanvasTexture(cv);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(3, 3);
+    tex.encoding = THREE.sRGBEncoding;
+    return tex;
+  }
   var chao = new THREE.Mesh(
     new THREE.CircleGeometry(13, 48),
-    new THREE.MeshStandardMaterial({ color: 0x0d0a14, roughness: 1, metalness: 0 })
+    new THREE.MeshStandardMaterial({ map: texturaMadeira(), roughness: 0.9, metalness: 0 })
   );
   chao.rotation.x = -Math.PI / 2;
   scene.add(chao);
+
+  function texturaTapete(){
+    var cv = document.createElement('canvas');
+    cv.width = 512; cv.height = 512;
+    var ctx = cv.getContext('2d');
+    ctx.fillStyle = '#5e1220';
+    ctx.fillRect(0, 0, 512, 512);
+    function circulo(r, cor, larg){
+      ctx.beginPath(); ctx.arc(256, 256, r, 0, Math.PI * 2);
+      ctx.strokeStyle = cor; ctx.lineWidth = larg; ctx.stroke();
+    }
+    circulo(246, '#C9A227', 8);
+    circulo(228, '#3d0a14', 10);
+    circulo(200, '#C9A227', 3);
+    circulo(120, '#C9A227', 3);
+    circulo(104, '#3d0a14', 8);
+    ctx.fillStyle = '#e8c85a';
+    for (var i = 0; i < 24; i++){
+      var a = i / 24 * Math.PI * 2;
+      ctx.beginPath(); ctx.arc(256 + Math.cos(a) * 164, 256 + Math.sin(a) * 164, 5, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.strokeStyle = '#e8c85a'; ctx.lineWidth = 4;
+    ctx.beginPath();
+    for (var p = 0; p < 5; p++){
+      var aa = -Math.PI / 2 + p * Math.PI * 2 / 5;
+      var a2 = aa + Math.PI / 5;
+      ctx.lineTo(256 + Math.cos(aa) * 62, 256 + Math.sin(aa) * 62);
+      ctx.lineTo(256 + Math.cos(a2) * 26, 256 + Math.sin(a2) * 26);
+    }
+    ctx.closePath(); ctx.stroke();
+    var tex = new THREE.CanvasTexture(cv);
+    tex.encoding = THREE.sRGBEncoding;
+    return tex;
+  }
+  var tapete = new THREE.Mesh(
+    new THREE.CircleGeometry(2.3, 48),
+    new THREE.MeshStandardMaterial({ map: texturaTapete(), roughness: 1, metalness: 0 })
+  );
+  tapete.rotation.x = -Math.PI / 2;
+  tapete.position.y = 0.012;
+  scene.add(tapete);
 
   var ouroMat = new THREE.MeshStandardMaterial({ color: 0xC9A227, roughness: 0.35, metalness: 0.8 });
   function anelDourado(raio){
@@ -229,6 +304,221 @@
     g.setAttribute('color', new THREE.BufferAttribute(cores, 3));
     var m = new THREE.PointsMaterial({ size: 0.09, vertexColors: true, transparent: true, opacity: 0.85, sizeAttenuation: true });
     scene.add(new THREE.Points(g, m));
+  })();
+
+  /* ============ AMBIENTE — CASA DE BRUXARIA ============ */
+  /* Parede circular de pedra (vista por dentro) */
+  function texturaPedra(){
+    var cv = document.createElement('canvas');
+    cv.width = 256; cv.height = 256;
+    var ctx = cv.getContext('2d');
+    ctx.fillStyle = '#221d2e';
+    ctx.fillRect(0, 0, 256, 256);
+    var alt = 32;
+    for (var f = 0; f < 8; f++){
+      var desloc = (f % 2) ? 32 : 0;
+      for (var x = -64; x < 256; x += 64){
+        var tom = 30 + Math.floor(Math.random() * 18);
+        ctx.fillStyle = 'rgb(' + tom + ',' + (tom - 4) + ',' + (tom + 8) + ')';
+        ctx.fillRect(x + desloc + 2, f * alt + 2, 60, alt - 4);
+      }
+    }
+    var tex = new THREE.CanvasTexture(cv);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(10, 2);
+    tex.encoding = THREE.sRGBEncoding;
+    return tex;
+  }
+  var parede = new THREE.Mesh(
+    new THREE.CylinderGeometry(12.5, 12.5, 7, 48, 1, true),
+    new THREE.MeshStandardMaterial({ map: texturaPedra(), roughness: 1, metalness: 0, side: THREE.BackSide })
+  );
+  parede.position.y = 3.5;
+  scene.add(parede);
+
+  /* brilho radial (lua e chamas) */
+  function texturaBrilho(){
+    var cv = document.createElement('canvas');
+    cv.width = 128; cv.height = 128;
+    var ctx = cv.getContext('2d');
+    var grad = ctx.createRadialGradient(64, 64, 4, 64, 64, 62);
+    grad.addColorStop(0, 'rgba(255,242,192,0.9)');
+    grad.addColorStop(0.4, 'rgba(255,242,192,0.28)');
+    grad.addColorStop(1, 'rgba(255,242,192,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 128, 128);
+    return new THREE.CanvasTexture(cv);
+  }
+  var brilhoTex = texturaBrilho();
+
+  /* janelas em arco com céu noturno; a do fundo tem a lua cheia */
+  function texturaCeu(){
+    var cv = document.createElement('canvas');
+    cv.width = 256; cv.height = 384;
+    var ctx = cv.getContext('2d');
+    var grad = ctx.createLinearGradient(0, 0, 0, 384);
+    grad.addColorStop(0, '#060a24');
+    grad.addColorStop(0.6, '#101a3e');
+    grad.addColorStop(1, '#1c2a52');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 256, 384);
+    for (var i = 0; i < 70; i++){
+      ctx.fillStyle = Math.random() < 0.7 ? '#ffffff' : '#e8c85a';
+      ctx.globalAlpha = 0.4 + Math.random() * 0.6;
+      ctx.beginPath(); ctx.arc(Math.random() * 256, Math.random() * 384, Math.random() * 1.6 + 0.5, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    var tex = new THREE.CanvasTexture(cv);
+    tex.encoding = THREE.sRGBEncoding;
+    return tex;
+  }
+  function formaArco(larg, alt){
+    var s = new THREE.Shape();
+    var r = larg / 2, reto = alt - r;
+    s.moveTo(-r, 0);
+    s.lineTo(-r, reto);
+    s.absarc(0, reto, r, Math.PI, 0, true);
+    s.lineTo(r, 0);
+    s.closePath();
+    return s;
+  }
+  function normalizaUV(geo){
+    geo.computeBoundingBox();
+    var bb = geo.boundingBox, sx = bb.max.x - bb.min.x, sy = bb.max.y - bb.min.y;
+    var uv = geo.attributes.uv;
+    for (var i = 0; i < uv.count; i++){
+      uv.setXY(i, (uv.getX(i) - bb.min.x) / sx, (uv.getY(i) - bb.min.y) / sy);
+    }
+    return geo;
+  }
+  function janela(angulo, comLua){
+    var g = new THREE.Group();
+    var ceuGeo = normalizaUV(new THREE.ShapeGeometry(formaArco(2.2, 3.4)));
+    var ceu = new THREE.Mesh(ceuGeo, new THREE.MeshBasicMaterial({ map: texturaCeu() }));
+    g.add(ceu);
+    var moldura = new THREE.Mesh(
+      new THREE.ShapeGeometry(formaArco(2.6, 3.7)),
+      new THREE.MeshStandardMaterial({ color: 0x2e2740, roughness: 0.9 })
+    );
+    moldura.position.z = -0.05;
+    g.add(moldura);
+    if (comLua){
+      var lua = new THREE.Mesh(
+        new THREE.CircleGeometry(0.8, 40),
+        new THREE.MeshBasicMaterial({ color: 0xfff6d8 })
+      );
+      lua.position.set(0, 2.3, 0.06);
+      g.add(lua);
+      var brilhoLua = new THREE.Sprite(new THREE.SpriteMaterial({ map: brilhoTex, color: 0xfff2c0, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false }));
+      brilhoLua.scale.set(4.2, 4.2, 1);
+      brilhoLua.position.set(0, 2.3, 0.1);
+      g.add(brilhoLua);
+    }
+    var peitoril = new THREE.Mesh(
+      new THREE.BoxGeometry(2.7, 0.14, 0.35),
+      new THREE.MeshStandardMaterial({ color: 0x2e2740, roughness: 0.9 })
+    );
+    peitoril.position.set(0, -0.07, 0.1);
+    g.add(peitoril);
+    var raio = 12.34;
+    g.position.set(Math.sin(angulo) * raio, 1.1, Math.cos(angulo) * raio);
+    g.lookAt(0, 1.1, 0);
+    scene.add(g);
+  }
+  janela(Math.PI, true);
+  janela(Math.PI + 2.094, false);
+  janela(Math.PI - 2.094, false);
+
+  /* velas acesas em cachos (chama com leve tremor no loop) */
+  var chamas = [];
+  function vela(x, z, altura){
+    var g = new THREE.Group();
+    var cera = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.05, 0.058, altura, 10),
+      new THREE.MeshStandardMaterial({ color: 0xe8dcc0, roughness: 0.6 })
+    );
+    cera.position.y = altura / 2;
+    g.add(cera);
+    var chama = new THREE.Mesh(
+      new THREE.SphereGeometry(0.035, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xffc861 })
+    );
+    chama.scale.set(1, 1.8, 1);
+    chama.position.y = altura + 0.07;
+    chama.userData.fase = Math.random() * Math.PI * 2;
+    g.add(chama);
+    chamas.push(chama);
+    g.position.set(x, 0, z);
+    scene.add(g);
+  }
+  function cachoVelas(cx, cz, n){
+    var bandeja = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.34, 0.38, 0.05, 20),
+      new THREE.MeshStandardMaterial({ color: 0x6b5a2e, roughness: 0.5, metalness: 0.7 })
+    );
+    bandeja.position.set(cx, 0.025, cz);
+    scene.add(bandeja);
+    var alturas = [0.34, 0.22, 0.28, 0.16];
+    for (var i = 0; i < n; i++){
+      var a = i / n * Math.PI * 2 + 0.6;
+      vela(cx + Math.cos(a) * 0.16, cz + Math.sin(a) * 0.16, alturas[i % alturas.length]);
+    }
+    var brilho = new THREE.Sprite(new THREE.SpriteMaterial({ map: brilhoTex, color: 0xffb347, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false }));
+    brilho.scale.set(1.4, 1.4, 1);
+    brilho.position.set(cx, 0.5, cz);
+    scene.add(brilho);
+  }
+  var ANG_CACHOS = [Math.PI / 6, 5 * Math.PI / 6, 3 * Math.PI / 2];
+  ANG_CACHOS.forEach(function(ang){
+    cachoVelas(Math.sin(ang) * 5.6, Math.cos(ang) * 5.6, 4);
+  });
+  cachoVelas(Math.sin(1.047) * 10.8, Math.cos(1.047) * 10.8, 3);
+  cachoVelas(Math.sin(5.236) * 10.8, Math.cos(5.236) * 10.8, 3);
+  ANG_CACHOS.forEach(function(ang){
+    var luzVela = new THREE.PointLight(0xff9a3c, 0.75, 8, 2);
+    luzVela.position.set(Math.sin(ang) * 5.6, 1.1, Math.cos(ang) * 5.6);
+    scene.add(luzVela);
+  });
+
+  /* ramos de ervas secas pendurados na borda de cima da parede */
+  var verdeErva = new THREE.MeshStandardMaterial({ color: 0x4a5a34, roughness: 1 });
+  var verdeErva2 = new THREE.MeshStandardMaterial({ color: 0x6b6a3f, roughness: 1 });
+  var cauleMat = new THREE.MeshStandardMaterial({ color: 0x5a4630, roughness: 1 });
+  function ramoErvas(angulo){
+    var g = new THREE.Group();
+    var caule = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 1.1, 6), cauleMat);
+    caule.position.y = -0.55;
+    g.add(caule);
+    for (var i = 0; i < 6; i++){
+      var folha = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.28, 6), i % 2 ? verdeErva : verdeErva2);
+      var lado = i % 2 ? 1 : -1;
+      folha.position.set(lado * 0.07, -0.2 - i * 0.14, (Math.random() - 0.5) * 0.08);
+      folha.rotation.z = lado * 0.9;
+      g.add(folha);
+    }
+    var no = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), cauleMat);
+    no.position.y = -0.02;
+    g.add(no);
+    g.position.set(Math.sin(angulo) * 11.9, 6.4, Math.cos(angulo) * 11.9);
+    scene.add(g);
+  }
+  [0.4, 1.5, 2.6, 3.9, 5.0].forEach(ramoErvas);
+
+  /* poeira dourada flutuando devagar */
+  var poeira;
+  (function poeiraDourada(){
+    var n = 90, pos = new Float32Array(n * 3);
+    for (var i = 0; i < n; i++){
+      var a = Math.random() * Math.PI * 2, r = 1.5 + Math.random() * 7.5;
+      pos[i*3] = Math.cos(a) * r;
+      pos[i*3+1] = 0.4 + Math.random() * 5.1;
+      pos[i*3+2] = Math.sin(a) * r;
+    }
+    var g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    var m = new THREE.PointsMaterial({ color: 0xe8c85a, size: 0.08, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
+    poeira = new THREE.Points(g, m);
+    scene.add(poeira);
   })();
 
   /* ============ PEDESTAIS ============ */
@@ -266,7 +556,7 @@
   controls.dampingFactor = 0.08;
   controls.enablePan = false;
   controls.minDistance = 2.5;
-  controls.maxDistance = 16;
+  controls.maxDistance = 12;
   controls.maxPolarAngle = 1.52;
   controls.autoRotate = true;
   controls.autoRotateSpeed = 0.7;
@@ -494,6 +784,20 @@
         if (tween.t >= 1) tween = null;
       }
       controls.update();
+      /* ambiente vivo: chamas tremem, poeira dourada flutua devagar */
+      var agora = Date.now() / 1000;
+      for (var fi = 0; fi < chamas.length; fi++){
+        var ch = chamas[fi];
+        ch.scale.set(
+          1 + 0.12 * Math.sin(agora * 11 + ch.userData.fase),
+          1.8 * (1 + 0.18 * Math.sin(agora * 9 + ch.userData.fase)),
+          1 + 0.12 * Math.sin(agora * 11 + ch.userData.fase)
+        );
+      }
+      if (poeira){
+        poeira.rotation.y = agora * 0.02;
+        poeira.position.y = Math.sin(agora * 0.15) * 0.15;
+      }
       renderer.render(scene, camera);
     } catch(err) { /* mantém o laço vivo */ }
   }
