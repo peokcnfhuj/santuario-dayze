@@ -9,7 +9,7 @@
   /* TODO-DRIVE-LINK: colar aqui o link do Google Drive do PDF final
      ("Acessar pelo Drive") quando o livro for aprovado e subido ao Drive.
      Enquanto estiver vazio, o botão avisa que o link ainda será adicionado. */
-  var DRIVE_LINK = "";
+  var DRIVE_LINK = "https://drive.google.com/file/d/1xldIlEH0Wxg_dC6EGeV89y17tk1kSOeo/view?usp=drivesdk";
 
   var LS_ULTIMO = "santuario-dayze-ultimo";
   var LS_LIDOS = "santuario-dayze-lidos";
