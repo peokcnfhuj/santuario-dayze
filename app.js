@@ -61,7 +61,7 @@
     window.scrollTo(0, 0);
   }
 
-  function abrir(id) {
+  function abrir(id, viaBotao) {
     var u = POR_ID[id];
     if (!u) u = UNITS[0];
     var i = u._i;
@@ -73,9 +73,14 @@
     var bAnt = $("btn-ant"), bProx = $("btn-prox");
     bAnt.disabled = !ant;
     bProx.disabled = !prox;
-    bAnt.onclick = ant ? function () { abrir(ant.id); } : null;
-    bProx.onclick = prox ? function () { abrir(prox.id); } : null;
-    if (location.hash !== "#/" + u.id) history.replaceState(null, "", "#/" + u.id);
+    bAnt.onclick = ant ? function () { abrir(ant.id, true); } : null;
+    bProx.onclick = prox ? function () { abrir(prox.id, true); } : null;
+    /* voltar no celular: cada virada de página entra no histórico,
+       então o botão voltar do aparelho volta para a página anterior */
+    if (location.hash !== "#/" + u.id) {
+      if (viaBotao) history.pushState(null, "", "#/" + u.id);
+      else history.replaceState(null, "", "#/" + u.id);
+    }
     mostrar("tela-ler");
     salvarJSON(LS_ULTIMO, u.id);
     salvarJSON(LS_PAGINA, u.pagina || 1);
@@ -106,7 +111,7 @@
       a.addEventListener("click", function (ev) {
         ev.preventDefault();
         fecharSumario();
-        abrir(a.getAttribute("data-id"));
+        abrir(a.getAttribute("data-id"), true);
       });
     });
   }
