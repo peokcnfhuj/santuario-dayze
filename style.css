@@ -64,6 +64,13 @@ a{color:var(--dourado-claro)}
 .btn:disabled{opacity:.45;cursor:default}
 .nota-drive{font-size:14px;color:var(--muted);text-align:center;margin:8px 0 0;font-style:italic}
 
+/* ---------- grimório para baixar ---------- */
+.grimorio{margin-top:26px;text-align:center;border:1px solid var(--borda);border-radius:14px;
+  padding:22px 18px;background:var(--painel)}
+.grimorio h2{color:var(--dourado-claro);font-weight:400;font-size:22px;margin:0 0 8px;letter-spacing:2px}
+.grimorio p{color:var(--texto-suave);font-size:16.5px;margin:0 0 16px}
+.grimorio .btn{max-width:460px;margin:0 auto}
+
 /* ---------- progresso ---------- */
 .barra-progresso{position:sticky;top:0;z-index:20;height:6px;background:#221a30}
 .barra-progresso i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--dourado),var(--dourado-claro));transition:width .4s}
