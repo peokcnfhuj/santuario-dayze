@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Galeria 3D — O Santuário da Dayze</title>
 <meta name="description" content="Galeria 3D do Santuário da Dayze: vê a Dayze e os objetos dela em 360° — caldeirão, varinha, cristal, vela, caveira e pentagrama. Idealizado por Hélio Castelo.">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" href="style.css">
 <style>
   .galeria-intro{text-align:center;padding:10px 0 4px}
@@ -575,22 +577,46 @@
   var grupos = {};
   var carregadas = 0, falhadas = [];
   var atual = null;
-  var manager = new THREE.LoadingManager();
-  manager.onProgress = function(url, nCarregados, nTotal){
-    mostraStatus('A carregar as peças… ' + carregadas + ' de ' + PECAS.length, (carregadas / PECAS.length) * 100);
-  };
-  manager.onLoad = function(){
-    if (falhadas.length) {
-      mostraErro('A galeria abriu, mas não consegui carregar: ' + falhadas.join(', ') + '. Recarrega a página para tentar outra vez.');
+  var loader = new THREE.GLTFLoader();
+  /* Carregamento priorizado: a Dayze primeiro, sozinha — a galeria abre com ela
+     em ~1 s; os outros 6 entram depois, um a um, em segundo plano. */
+  var fila = [];
+  PECAS.forEach(function(peca, i){ fila.push({ peca: peca, i: i }); });
+  var tentadas = 0;
+  function atualizaStatus(){
+    if (tentadas >= PECAS.length){
+      if (falhadas.length){
+        mostraErro('A galeria abriu, mas não consegui carregar: ' + falhadas.join(', ') + '. Recarrega a página para tentar outra vez.');
+      } else {
+        mostraStatus('Toca numa peça para saber o que ela é.', 100);
+        setTimeout(function(){ statusEl.style.display = 'none'; }, 3500);
+      }
     } else {
-      mostraStatus('Toca numa peça para saber o que ela é.', 100);
-      setTimeout(function(){ statusEl.style.display = 'none'; }, 3500);
+      mostraStatus('A carregar as peças… ' + carregadas + ' de ' + PECAS.length, (carregadas / PECAS.length) * 100);
     }
-  };
-  manager.onError = function(url){
-    mostraErro('Não consegui carregar um modelo. Recarrega a página para tentar outra vez.');
-  };
-  var loader = new THREE.GLTFLoader(manager);
+  }
+  function carregaProxima(){
+    if (!fila.length) return;
+    var item = fila.shift();
+    var peca = item.peca, i = item.i;
+    loader.load(peca.arquivo,
+      function(gltf){
+        montaPeca(peca, i, gltf);
+        tentadas++;
+        atualizaStatus();
+        carregaProxima();
+      },
+      undefined,
+      function(){
+        falhadas.push(peca.nome);
+        tentadas++;
+        atualizaStatus();
+        carregaProxima();
+      }
+    );
+  }
+  atualizaStatus();
+  carregaProxima();
 
   function posicaoDaPeca(peca, i){
     if (peca.central) return { x: 0, z: 0, ang: 0 };
@@ -634,16 +660,7 @@
     carregadas++;
   }
 
-  PECAS.forEach(function(peca, i){
-    loader.load(peca.arquivo,
-      function(gltf){ montaPeca(peca, i, gltf); },
-      undefined,
-      function(){
-        falhadas.push(peca.nome);
-        mostraErro('Não consegui carregar: ' + peca.nome + '. As outras peças continuam. Recarrega a página para tentar outra vez.');
-      }
-    );
-  });
+  /* (o carregamento é feito pela fila acima: Dayze primeiro, resto em segundo plano) */
 
   /* ============ ESCOLHER PEÇA ============ */
   var tween = null;
