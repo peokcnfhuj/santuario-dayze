@@ -560,8 +560,12 @@
   controls.minDistance = 2.5;
   controls.maxDistance = 12;
   controls.maxPolarAngle = 1.52;
-  controls.autoRotate = true;
-  controls.autoRotateSpeed = 0.7;
+  controls.autoRotate = false; /* rotação feita à mão no tick, por tempo — gira mesmo com rAF lento */
+  var girando = true;
+  var arrastando = false;
+  controls.addEventListener('start', function(){ arrastando = true; });
+  controls.addEventListener('end', function(){ arrastando = false; });
+  var EIXO_Y = new THREE.Vector3(0, 1, 0);
 
   function dimensiona(){
     var w = stageBox.clientWidth, h = stageBox.clientHeight;
@@ -737,15 +741,15 @@
   /* ============ BOTÕES ============ */
   var btnGirar = document.getElementById('btn-girar');
   function pararGiro(){
-    if (!controls.autoRotate) return;
-    controls.autoRotate = false;
+    if (!girando) return;
+    girando = false;
     btnGirar.classList.remove('ativo');
     btnGirar.textContent = '⟳ Parada';
   }
   btnGirar.addEventListener('click', function(){
-    controls.autoRotate = !controls.autoRotate;
-    btnGirar.classList.toggle('ativo', controls.autoRotate);
-    btnGirar.textContent = controls.autoRotate ? '⟳ A girar' : '⟳ Parada';
+    girando = !girando;
+    btnGirar.classList.toggle('ativo', girando);
+    btnGirar.textContent = girando ? '⟳ A girar' : '⟳ Parada';
   });
   canvas.addEventListener('pointerdown', pararGiro, { once: true });
 
@@ -783,11 +787,15 @@
   });
 
   /* ============ LOOP ============ */
+  var ultimoTick = Date.now() / 1000;
   function tick(){
     requestAnimationFrame(tick);
     try {
       var r = stageBox.getBoundingClientRect();
-      if (r.bottom < 0 || r.top > window.innerHeight) return;
+      if (r.bottom < 0 || r.top > window.innerHeight) { ultimoTick = Date.now() / 1000; return; }
+      var agora = Date.now() / 1000;
+      var dt = Math.min(0.1, Math.max(0, agora - ultimoTick));
+      ultimoTick = agora;
       if (tween) {
         tween.t += 0.04;
         var k = tween.t >= 1 ? 1 : (1 - Math.pow(1 - tween.t, 3));
@@ -799,10 +807,14 @@
         var s = new THREE.Spherical(raio, phi, theta);
         camera.position.copy(alvo).add(new THREE.Vector3().setFromSpherical(s));
         if (tween.t >= 1) tween = null;
+      } else if (girando && !arrastando) {
+        /* rotação automática por tempo (não por quadro): gira mesmo com rAF lento */
+        var off = camera.position.clone().sub(controls.target);
+        off.applyAxisAngle(EIXO_Y, dt * 0.12);
+        camera.position.copy(controls.target).add(off);
       }
       controls.update();
       /* ambiente vivo: chamas tremem, poeira dourada flutua devagar */
-      var agora = Date.now() / 1000;
       for (var fi = 0; fi < chamas.length; fi++){
         var ch = chamas[fi];
         ch.scale.set(

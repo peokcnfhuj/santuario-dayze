@@ -102,6 +102,10 @@
         <canvas id="vitrine-gl"></canvas>
         <div class="vitrine-dica">☾ Arrasta para girar · pinça para zoom</div>
         <div class="vitrine-status" id="vitrine-status">A Dayze está a chegar…</div>
+        <div class="vitrine-zoom" style="position:absolute;right:14px;bottom:12px;display:flex;gap:8px;z-index:3">
+          <button type="button" id="vitrine-zoom-mais" aria-label="Aproximar" style="width:42px;height:42px;border-radius:50%;border:1px solid #e8c85a;background:rgba(6,4,9,.75);color:#e8c85a;font-size:22px;line-height:1;cursor:pointer">+</button>
+          <button type="button" id="vitrine-zoom-menos" aria-label="Afastar" style="width:42px;height:42px;border-radius:50%;border:1px solid #e8c85a;background:rgba(6,4,9,.75);color:#e8c85a;font-size:22px;line-height:1;cursor:pointer">−</button>
+        </div>
       </div>
       <p class="vitrine-legenda">Dayze, a bruxa solitária — gire para ver em 360°</p>
       <a class="btn fantasma vitrine-btn" href="galeria-3d.html"><span>Ver a galeria 3D completa</span></a>
@@ -269,9 +273,23 @@
   controls.minDistance = 2.5;
   controls.maxDistance = 12;
   controls.maxPolarAngle = 1.52;
-  controls.autoRotate = true;
-  controls.autoRotateSpeed = 0.7;
-  canvas.addEventListener('pointerdown', function(){ controls.autoRotate = false; }, { once: true });
+  controls.autoRotate = false; /* rotação feita à mão no tick, por tempo — gira mesmo com rAF lento */
+  var girando = true;
+  var arrastando = false;
+  controls.addEventListener('start', function(){ arrastando = true; });
+  controls.addEventListener('end', function(){ arrastando = false; });
+  var EIXO_Y = new THREE.Vector3(0, 1, 0);
+  canvas.addEventListener('pointerdown', function(){ girando = false; }, { once: true });
+
+  function zoomVitrine(fator){
+    girando = false;
+    var pos = camera.position.clone().sub(controls.target);
+    var esf = new THREE.Spherical().setFromVector3(pos);
+    esf.radius = Math.min(controls.maxDistance, Math.max(controls.minDistance, esf.radius * fator));
+    camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(esf));
+  }
+  document.getElementById('vitrine-zoom-mais').addEventListener('click', function(){ zoomVitrine(0.78); });
+  document.getElementById('vitrine-zoom-menos').addEventListener('click', function(){ zoomVitrine(1.28); });
 
   function dimensiona(){
     var w = quadro.clientWidth, h = quadro.clientHeight;
@@ -321,10 +339,20 @@
     var r = quadro.getBoundingClientRect();
     return r.bottom > 0 && r.top < window.innerHeight && r.width > 0 && r.height > 0;
   }
+  var ultimoTick = Date.now() / 1000;
   function tick(){
     requestAnimationFrame(tick);
     try {
-      if (!visivel()) return;
+      if (!visivel()) { ultimoTick = Date.now() / 1000; return; }
+      var agora = Date.now() / 1000;
+      var dt = Math.min(0.1, Math.max(0, agora - ultimoTick));
+      ultimoTick = agora;
+      if (girando && !arrastando) {
+        /* rotação automática por tempo (não por quadro): gira mesmo com rAF lento */
+        var off = camera.position.clone().sub(controls.target);
+        off.applyAxisAngle(EIXO_Y, dt * 0.12);
+        camera.position.copy(controls.target).add(off);
+      }
       dimensiona();
       controls.update();
       renderer.render(scene, camera);
