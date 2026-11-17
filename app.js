@@ -72,17 +72,12 @@
     $("cap-conteudo").innerHTML = u.html;
     var bAnt = $("btn-ant"), bProx = $("btn-prox");
     bProx.disabled = !prox;
-    /* na primeira página não há parte anterior: o botão volta ao início
-       (em vez de ficar apagado) e mostra isso no rótulo */
-    if (ant) {
-      bAnt.disabled = false;
-      bAnt.textContent = "← Anterior";
-      bAnt.onclick = function () { abrir(ant.id, true); };
-    } else {
-      bAnt.disabled = false;
-      bAnt.textContent = "← Início";
-      bAnt.onclick = function () { irHome(); };
-    }
+    /* o botão é sempre "← Anterior" e volta sempre uma página; só fica
+       apagado na capa (pág. 1), a primeira de verdade do livro, onde não
+       há página anterior */
+    bAnt.disabled = !ant;
+    bAnt.textContent = "← Anterior";
+    bAnt.onclick = ant ? function () { abrir(ant.id, true); } : null;
     bProx.onclick = prox ? function () { abrir(prox.id, true); } : null;
     /* voltar no celular: cada virada de página entra no histórico,
        então o botão voltar do aparelho volta para a página anterior */
@@ -150,10 +145,10 @@
 
   /* ---- botões ---- */
   function ligarBotoes() {
-    $("btn-comecar").addEventListener("click", function () { abrir("intro"); });
+    $("btn-comecar").addEventListener("click", function () { abrir("capa"); });
     $("btn-continuar").addEventListener("click", function () {
       var ultimo = lerJSON(LS_ULTIMO, null);
-      abrir(ultimo && POR_ID[ultimo] ? ultimo : "intro");
+      abrir(ultimo && POR_ID[ultimo] ? ultimo : "capa");
     });
     $("btn-sumario-home").addEventListener("click", abrirSumario);
     $("btn-sumario-ler").addEventListener("click", abrirSumario);
