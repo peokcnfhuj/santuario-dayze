@@ -71,9 +71,18 @@
     $("cap-sub").textContent = "Página " + (u.pagina || 1) + " de 100";
     $("cap-conteudo").innerHTML = u.html;
     var bAnt = $("btn-ant"), bProx = $("btn-prox");
-    bAnt.disabled = !ant;
     bProx.disabled = !prox;
-    bAnt.onclick = ant ? function () { abrir(ant.id, true); } : null;
+    /* na primeira página não há parte anterior: o botão volta ao início
+       (em vez de ficar apagado) e mostra isso no rótulo */
+    if (ant) {
+      bAnt.disabled = false;
+      bAnt.textContent = "← Anterior";
+      bAnt.onclick = function () { abrir(ant.id, true); };
+    } else {
+      bAnt.disabled = false;
+      bAnt.textContent = "← Início";
+      bAnt.onclick = function () { irHome(); };
+    }
     bProx.onclick = prox ? function () { abrir(prox.id, true); } : null;
     /* voltar no celular: cada virada de página entra no histórico,
        então o botão voltar do aparelho volta para a página anterior */
