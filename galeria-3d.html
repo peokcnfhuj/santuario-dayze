@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Galeria 3D — O Santuário da Dayze</title>
+<meta name="description" content="Galeria 3D do Santuário da Dayze: vê a Dayze e os objetos dela em 360° — caldeirão, varinha, cristal, vela, caveira e pentagrama. Idealizado por Hélio Castelo.">
+<link rel="stylesheet" href="style.css">
+<style>
+  .galeria-intro{text-align:center;padding:10px 0 4px}
+  .galeria-intro h1{font-size:30px;letter-spacing:4px;font-weight:400;color:var(--dourado-claro);margin:14px 0 4px;line-height:1.25}
+  .galeria-intro .sub{font-size:18px;font-style:italic;color:var(--texto);margin:0 0 6px}
+  .galeria-intro .autor{color:var(--prata);letter-spacing:2px;text-transform:uppercase;font-size:13px}
+  .galeria-intro .autor b{color:var(--dourado-claro);font-weight:400}
+  .galeria-intro p.desc{color:var(--texto-suave);max-width:560px;margin:14px auto 0;font-size:17px}
+  .pecas-nav{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:20px 0 0}
+  .peca-btn{appearance:none;border:1.5px solid var(--borda-suave);background:var(--painel);
+    color:var(--texto-suave);font-family:var(--serif);font-size:16px;font-weight:400;
+    padding:10px 18px;border-radius:99px;cursor:pointer;min-height:46px}
+  .peca-btn.ativo{background:linear-gradient(180deg,#e8c85a,#C9A227);border-color:var(--dourado);color:#171204}
+  .stage-card{margin-top:20px;background:#0b0714;border:1px solid var(--borda);
+    border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  .stage-box{position:relative;height:min(62vh,560px);min-height:360px;
+    background:radial-gradient(120% 90% at 50% 30%,#171224 0%,#0b0714 55%,#060409 100%)}
+  #gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+  #gl:active{cursor:grabbing}
+  .stage-status{position:absolute;left:14px;bottom:12px;max-width:min(92%,560px);
+    background:rgba(6,4,9,.82);color:var(--texto);border:1px solid var(--borda);
+    border-radius:10px;padding:8px 12px;font-size:15px;line-height:1.4}
+  .stage-status .bar{height:6px;background:rgba(255,255,255,.15);border-radius:99px;margin-top:6px;overflow:hidden}
+  .stage-status .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--dourado),var(--dourado-claro));border-radius:99px;transition:width .2s}
+  .stage-status.erro{border-color:#b03a2e}
+  .stage-hint{position:absolute;right:14px;top:12px;background:rgba(6,4,9,.7);color:var(--dourado-claro);
+    border-radius:99px;padding:5px 12px;font-size:14px;pointer-events:none}
+  .controles{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 14px 14px;background:#060409}
+  .controles .grupo{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .controles .sep{flex:1}
+  .cbtn{appearance:none;border:1px solid var(--borda-suave);background:transparent;color:var(--dourado-claro);
+    font-family:var(--serif);font-size:16px;padding:10px 16px;border-radius:8px;cursor:pointer;min-height:48px}
+  .cbtn.ativo{background:rgba(201,162,39,.2);border-color:var(--dourado)}
+  .cbtn:active{transform:translateY(1px)}
+  .ficha{background:var(--painel);border:1px solid var(--borda);border-radius:10px;
+    margin-top:18px;padding:22px 22px 24px}
+  .ficha .rotulo{font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--dourado);text-align:center}
+  .ficha h2{font-size:26px;line-height:1.3;text-align:center;margin:8px 0 10px;font-weight:400;color:var(--dourado-claro)}
+  .ficha p{margin:0;text-align:center;color:var(--texto-suave);font-size:17px}
+  .ficha p.falha{color:#e8a49c}
+  @media (min-width:700px){
+    .galeria-intro h1{font-size:36px}
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="topo">
+    <span class="lua"><img src="img/emblema-lua.jpg" alt="Lua e estrela"></span>
+    <span>
+      <span class="nome">O <b>Santuário</b> da Dayze</span><br>
+      <span class="sub">Bruxaria Solitária · O Livro de Dayze</span>
+    </span>
+  </header>
+
+  <section class="galeria-intro">
+    <h1>GALERIA 3D</h1>
+    <p class="sub">Dayze e os objetos dela — gira em 360°</p>
+    <p class="autor">Idealizado por <b>Hélio Castelo</b></p>
+    <p class="desc">A Dayze está no pedestal do meio, maior. À volta dela ficam os seis objetos
+    do livro: o caldeirão, a varinha, o cristal, a vela, a caveira e o pentagrama.
+    Arrasta para girar, toca numa peça para saber o que ela é.</p>
+  </section>
+
+  <nav class="pecas-nav" id="pecas-nav" aria-label="Peças da galeria"></nav>
+
+  <div class="stage-card">
+    <div class="stage-box" id="stage-box">
+      <canvas id="gl"></canvas>
+      <div class="stage-hint">☾ Arrasta para girar · pinça para zoom</div>
+      <div class="stage-status" id="status">A preparar a galeria…
+        <div class="bar"><i id="barra"></i></div>
+      </div>
+    </div>
+    <div class="controles">
+      <div class="grupo">
+        <button class="cbtn" id="btn-zoom-mais" type="button">＋ Zoom</button>
+        <button class="cbtn" id="btn-zoom-menos" type="button">－ Zoom</button>
+      </div>
+      <div class="sep"></div>
+      <div class="grupo">
+        <button class="cbtn ativo" id="btn-girar" type="button">⟳ A girar</button>
+        <button class="cbtn" id="btn-centro" type="button">◎ Centro</button>
+      </div>
+    </div>
+  </div>
+
+  <article class="ficha" id="ficha">
+    <div class="rotulo">Na galeria</div>
+    <h2 id="ficha-nome">Dayze</h2>
+    <p id="ficha-desc">A bruxa solitária. Cabelo escuro com uma mecha prateada, olhos verdes
+    e o grimório sempre nas mãos. Vive sozinha numa casa à beira da floresta,
+    trabalha com a lua e as ervas, e tem uma gata cinza como familiar.</p>
+  </article>
+
+  <div class="botoes">
+    <a class="btn" href="index.html"><span>← Voltar ao início</span></a>
+    <a class="btn fantasma" href="livro-dayze-bruxaria-solitaria.pdf" download="Bruxaria Solitária — O Livro de Dayze.pdf"><span>Salvar o livro em PDF</span></a>
+  </div>
+
+  <footer class="rodape">
+    <span class="lua-peq">☾</span><br>
+    A lua chama quem escuta sozinha.<br>
+    <b>Feito pela PVSR HOLDING TECH</b>
+  </footer>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* ============ AS PEÇAS ============ */
+  var PECAS = [
+    { id:'dayze', nome:'Dayze', arquivo:'modelos/dayze.glb', central:true, escala:2.0,
+      desc:'A bruxa solitária. Cabelo escuro com uma mecha prateada, olhos verdes e o grimório sempre nas mãos. Vive sozinha numa casa à beira da floresta, trabalha com a lua e as ervas, e tem uma gata cinza como familiar.' },
+    { id:'caldeirao', nome:'Caldeirão', arquivo:'modelos/caldeirao.glb', escala:1.15,
+      desc:'O caldeirão de ferro da Dayze. Nele ela prepara banhos, chás e poções — o coração da cozinha mágica da casa.' },
+    { id:'varinha', nome:'Varinha', arquivo:'modelos/varinha.glb', escala:1.15, deitada:true,
+      desc:'A varinha de madeira, com a ponta que brilha. Serve para dirigir a intenção e desenhar o círculo antes de cada feitiço.' },
+    { id:'cristal', nome:'Cristal de ametista', arquivo:'modelos/cristal.glb', escala:1.15,
+      desc:'A ponta de ametista. Pedra da intuição e da calma: fica no altar para limpar a energia e ajudar nos sonhos.' },
+    { id:'vela', nome:'Vela', arquivo:'modelos/vela.glb', escala:1.15,
+      desc:'A vela branca do ritual. A chama acesa abre o trabalho, protege a casa e leva o pedido até a lua.' },
+    { id:'caveira', nome:'Caveira', arquivo:'modelos/caveira.glb', escala:1.15,
+      desc:'A caveira no altar. Símbolo dos ancestrais e do ciclo da vida: lembra que toda a morte alimenta um novo começo.' },
+    { id:'pentagrama', nome:'Pentagrama', arquivo:'modelos/pentagrama.glb', escala:1.15, inclinar:true,
+      desc:'O pentagrama dourado dentro do círculo. Os cinco elementos — terra, água, fogo, ar e espírito — em equilíbrio e proteção.' }
+  ];
+  var RAIO_ANEL = 3.4;
+
+  var statusEl = document.getElementById('status');
+  var barraEl = document.getElementById('barra');
+  var fichaNome = document.getElementById('ficha-nome');
+  var fichaDesc = document.getElementById('ficha-desc');
+  var navEl = document.getElementById('pecas-nav');
+  var canvas = document.getElementById('gl');
+  var stageBox = document.getElementById('stage-box');
+
+  function mostraStatus(msg, pct){
+    statusEl.childNodes[0].textContent = msg;
+    if (typeof pct === 'number') barraEl.style.width = Math.round(pct) + '%';
+  }
+  function mostraErro(msg){
+    statusEl.classList.add('erro');
+    mostraStatus(msg, null);
+  }
+
+  if (!window.THREE) { mostraErro('Não consegui abrir o 3D. Verifica a ligação à internet e recarrega a página.'); return; }
+  if (!THREE.GLTFLoader || !THREE.OrbitControls) {
+    mostraErro('Não consegui abrir o 3D (falta uma parte). Recarrega a página para tentar outra vez.');
+    return;
+  }
+
+  var ehToque = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+  /* ============ RENDERER / CENA ============ */
+  var renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !ehToque, powerPreference: 'high-performance' });
+  } catch(e) {
+    mostraErro('Este aparelho não abriu o 3D (WebGL). Tenta noutro aparelho ou navegador.');
+    return;
+  }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, ehToque ? 1.25 : 1.5));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x060409);
+  scene.fog = new THREE.Fog(0x060409, 14, 30);
+
+  var camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+  camera.position.set(0, 3.4, 10.5);
+
+  /* luzes — sem sombras, para o celular correr leve */
+  scene.add(new THREE.AmbientLight(0xffe9c4, 0.55));
+  var chave = new THREE.DirectionalLight(0xfff1d6, 1.5);
+  chave.position.set(5, 8, 6);
+  scene.add(chave);
+  var fill = new THREE.DirectionalLight(0xbfd0ff, 0.5);
+  fill.position.set(-6, 4, 5);
+  scene.add(fill);
+  var rim = new THREE.DirectionalLight(0xffd9a0, 0.9);
+  rim.position.set(-3, 6, -7);
+  scene.add(rim);
+
+  /* ============ CHÃO, ANÉIS E ESTRELAS ============ */
+  var chao = new THREE.Mesh(
+    new THREE.CircleGeometry(13, 48),
+    new THREE.MeshStandardMaterial({ color: 0x0d0a14, roughness: 1, metalness: 0 })
+  );
+  chao.rotation.x = -Math.PI / 2;
+  scene.add(chao);
+
+  var ouroMat = new THREE.MeshStandardMaterial({ color: 0xC9A227, roughness: 0.35, metalness: 0.8 });
+  function anelDourado(raio){
+    var anel = new THREE.Mesh(new THREE.RingGeometry(raio - 0.03, raio + 0.03, 64), ouroMat);
+    anel.rotation.x = -Math.PI / 2;
+    anel.position.y = 0.02;
+    scene.add(anel);
+  }
+  anelDourado(1.95);
+  anelDourado(RAIO_ANEL);
+
+  (function estrelas(){
+    var n = 260, pos = new Float32Array(n * 3), cores = new Float32Array(n * 3);
+    var c1 = new THREE.Color(0xffffff), c2 = new THREE.Color(0xe8c85a), c;
+    for (var i = 0; i < n; i++){
+      var t = Math.random() * Math.PI * 2, p = Math.random() * Math.PI * 0.42, r = 11 + Math.random() * 4;
+      pos[i*3]   = r * Math.sin(p) * Math.cos(t);
+      pos[i*3+1] = 1.5 + r * Math.cos(p) * 0.7;
+      pos[i*3+2] = r * Math.sin(p) * Math.sin(t);
+      c = Math.random() < 0.5 ? c1 : c2;
+      cores[i*3] = c.r; cores[i*3+1] = c.g; cores[i*3+2] = c.b;
+    }
+    var g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(cores, 3));
+    var m = new THREE.PointsMaterial({ size: 0.09, vertexColors: true, transparent: true, opacity: 0.85, sizeAttenuation: true });
+    scene.add(new THREE.Points(g, m));
+  })();
+
+  /* ============ PEDESTAIS ============ */
+  var pedraMat = new THREE.MeshStandardMaterial({ color: 0x2a2438, roughness: 0.85, metalness: 0.05 });
+  var pedraEscura = new THREE.MeshStandardMaterial({ color: 0x1a1526, roughness: 0.9, metalness: 0.05 });
+  function pedestal(raio, altura){
+    var g = new THREE.Group();
+    var base = new THREE.Mesh(new THREE.CylinderGeometry(raio * 1.12, raio * 1.25, 0.16, 40), pedraEscura);
+    base.position.y = 0.08;
+    g.add(base);
+    var coluna = new THREE.Mesh(new THREE.CylinderGeometry(raio * 0.82, raio * 0.95, altura - 0.3, 40), pedraMat);
+    coluna.position.y = 0.16 + (altura - 0.3) / 2;
+    g.add(coluna);
+    var topo = new THREE.Mesh(new THREE.CylinderGeometry(raio, raio * 0.88, 0.14, 40), pedraMat);
+    topo.position.y = altura - 0.07;
+    g.add(topo);
+    var fio = new THREE.Mesh(new THREE.TorusGeometry(raio * 0.96, 0.022, 8, 48), ouroMat);
+    fio.rotation.x = Math.PI / 2;
+    fio.position.y = altura - 0.14;
+    g.add(fio);
+    return g;
+  }
+
+  var anelSelecao = new THREE.Mesh(
+    new THREE.TorusGeometry(1, 0.045, 10, 64),
+    new THREE.MeshStandardMaterial({ color: 0xe8c85a, roughness: 0.3, metalness: 0.8, emissive: 0xC9A227, emissiveIntensity: 0.55 })
+  );
+  anelSelecao.rotation.x = Math.PI / 2;
+  anelSelecao.visible = false;
+  scene.add(anelSelecao);
+
+  /* ============ ETIQUETAS ============ */
+  function etiqueta(texto, grande){
+    var cv = document.createElement('canvas');
+    cv.width = 512; cv.height = grande ? 160 : 128;
+    var ctx = cv.getContext('2d');
+    var fs = grande ? 64 : 56;
+    ctx.font = '400 ' + fs + 'px Georgia, serif';
+    var tw = ctx.measureText(texto).width;
+    var pad = 44, w = Math.min(512, tw + pad * 2), h = grande ? 160 : 128;
+    cv.width = w; cv.height = h;
+    ctx = cv.getContext('2d');
+    ctx.fillStyle = 'rgba(6,4,9,0.82)';
+    ctx.strokeStyle = 'rgba(201,162,39,0.9)';
+    ctx.lineWidth = 3;
+    var r = 26;
+    ctx.beginPath();
+    ctx.moveTo(r, 3); ctx.lineTo(w - r, 3); ctx.quadraticCurveTo(w - 3, 3, w - 3, r);
+    ctx.lineTo(w - 3, h - r); ctx.quadraticCurveTo(w - 3, h - 3, w - r, h - 3);
+    ctx.lineTo(r, h - 3); ctx.quadraticCurveTo(3, h - 3, 3, h - r);
+    ctx.lineTo(3, r); ctx.quadraticCurveTo(3, 3, r, 3);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.font = '400 ' + fs + 'px Georgia, serif';
+    ctx.fillStyle = '#e8c85a';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(texto, w / 2, h / 2 + 2);
+    var tex = new THREE.CanvasTexture(cv);
+    tex.encoding = THREE.sRGBEncoding;
+    var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+    var escala = grande ? 2.6 : 1.9;
+    sp.scale.set(escala, escala * h / w, 1);
+    return sp;
+  }
+
+  /* ============ CONTROLOS ============ */
+  var controls = new THREE.OrbitControls(camera, canvas);
+  controls.target.set(0, 1.5, 0);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.enablePan = false;
+  controls.minDistance = 2.5;
+  controls.maxDistance = 16;
+  controls.maxPolarAngle = 1.52;
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 0.7;
+
+  function dimensiona(){
+    var w = stageBox.clientWidth, h = stageBox.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', dimensiona);
+  window.addEventListener('orientationchange', function(){ setTimeout(dimensiona, 300); });
+
+  /* ============ CARREGAR AS PEÇAS ============ */
+  var grupos = {};
+  var carregadas = 0, falhadas = [];
+  var atual = null;
+  var manager = new THREE.LoadingManager();
+  manager.onProgress = function(url, nCarregados, nTotal){
+    mostraStatus('A carregar as peças… ' + nCarregados + ' de ' + nTotal, (nCarregados / nTotal) * 100);
+  };
+  manager.onLoad = function(){
+    if (falhadas.length) {
+      mostraErro('A galeria abriu, mas não consegui carregar: ' + falhadas.join(', ') + '. Recarrega a página para tentar outra vez.');
+    } else {
+      mostraStatus('Toca numa peça para saber o que ela é.', 100);
+      setTimeout(function(){ statusEl.style.display = 'none'; }, 3500);
+    }
+  };
+  manager.onError = function(url){
+    mostraErro('Não consegui carregar um modelo. Recarrega a página para tentar outra vez.');
+  };
+  var loader = new THREE.GLTFLoader(manager);
+
+  function posicaoDaPeca(peca, i){
+    if (peca.central) return { x: 0, z: 0, ang: 0 };
+    var ang = (i - 1) * (Math.PI * 2 / 6);
+    return { x: Math.sin(ang) * RAIO_ANEL, z: Math.cos(ang) * RAIO_ANEL, ang: ang };
+  }
+
+  function montaPeca(peca, i, gltf){
+    var obj = gltf.scene;
+    obj.scale.setScalar(peca.escala);
+    var caixa = new THREE.Box3().setFromObject(obj);
+    var tam = new THREE.Vector3(); caixa.getSize(tam);
+    var centro = new THREE.Vector3(); caixa.getCenter(centro);
+    obj.position.sub(centro);
+    obj.position.y += tam.y / 2;
+
+    var pos = posicaoDaPeca(peca, i);
+    var alturaPedestal = peca.central ? 0.85 : 0.5;
+    var raioPedestal = peca.central ? 1.25 : 0.72;
+    var ped = pedestal(raioPedestal, alturaPedestal);
+    ped.position.set(pos.x, 0, pos.z);
+    scene.add(ped);
+
+    var grupo = new THREE.Group();
+    grupo.add(obj);
+    if (peca.deitada) {
+      obj.rotation.z = Math.PI / 2;
+      obj.position.y = 0.12;
+    } else if (peca.inclinar) {
+      obj.rotation.x = -0.12;
+    }
+    if (!peca.central) grupo.rotation.y = pos.ang;
+    grupo.position.set(pos.x, alturaPedestal, pos.z);
+    scene.add(grupo);
+
+    var topoModelo = alturaPedestal + tam.y * (peca.deitada ? 0.35 : 1);
+    var rotulo = etiqueta(peca.nome, !!peca.central);
+    rotulo.position.set(pos.x, topoModelo + (peca.central ? 0.55 : 0.45), pos.z);
+    scene.add(rotulo);
+
+    var c = new THREE.Box3().setFromObject(grupo);
+    var cc = new THREE.Vector3(); c.getCenter(cc);
+    var t2 = new THREE.Vector3(); c.getSize(t2);
+    grupos[peca.id] = { peca: peca, grupo: grupo, centro: cc, tamanho: Math.max(t2.x, t2.y, t2.z), raioPedestal: raioPedestal, alturaPedestal: alturaPedestal };
+    grupo.traverse(function(o){ o.userData.pecaId = peca.id; });
+    carregadas++;
+  }
+
+  PECAS.forEach(function(peca, i){
+    loader.load(peca.arquivo,
+      function(gltf){ montaPeca(peca, i, gltf); },
+      undefined,
+      function(){
+        falhadas.push(peca.nome);
+        mostraErro('Não consegui carregar: ' + peca.nome + '. As outras peças continuam. Recarrega a página para tentar outra vez.');
+      }
+    );
+  });
+
+  /* ============ ESCOLHER PEÇA ============ */
+  var tween = null;
+  function irPara(id, instantaneo){
+    var g = grupos[id];
+    if (!g) return;
+    pararGiro();
+    atual = id;
+    document.querySelectorAll('.peca-btn').forEach(function(b){
+      b.classList.toggle('ativo', b.getAttribute('data-peca') === id);
+    });
+    fichaNome.textContent = g.peca.nome;
+    fichaDesc.textContent = g.peca.desc;
+    fichaDesc.classList.remove('falha');
+    anelSelecao.visible = true;
+    anelSelecao.scale.setScalar(g.raioPedestal + 0.12);
+    anelSelecao.position.set(g.grupo.position.x, g.alturaPedestal + 0.03, g.grupo.position.z);
+    var dist = Math.min(9, Math.max(3.2, g.tamanho * 3.4));
+    var alvo = g.centro.clone();
+    if (instantaneo) {
+      controls.target.copy(alvo);
+      var dir = camera.position.clone().sub(controls.target).normalize();
+      camera.position.copy(alvo).add(dir.multiplyScalar(dist));
+      return;
+    }
+    var pos = camera.position.clone().sub(controls.target);
+    var esf = new THREE.Spherical().setFromVector3(pos);
+    var destinoTheta = Math.atan2(pos.x, pos.z);
+    tween = {
+      t: 0,
+      deTarget: controls.target.clone(), paraTarget: alvo,
+      de: { theta: esf.theta, phi: esf.phi, raio: esf.radius },
+      para: { theta: destinoTheta, phi: 1.15, raio: dist }
+    };
+  }
+
+  PECAS.forEach(function(peca){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'peca-btn' + (peca.id === 'dayze' ? ' ativo' : '');
+    b.setAttribute('data-peca', peca.id);
+    b.textContent = peca.nome;
+    b.addEventListener('click', function(){ irPara(peca.id, false); });
+    navEl.appendChild(b);
+  });
+
+  /* tocar numa peça no palco */
+  var raycaster = new THREE.Raycaster();
+  var ponteiro = new THREE.Vector2();
+  var toqueInicio = null;
+  canvas.addEventListener('pointerdown', function(e){
+    toqueInicio = { x: e.clientX, y: e.clientY, t: Date.now() };
+  });
+  canvas.addEventListener('pointerup', function(e){
+    if (!toqueInicio) return;
+    var dx = e.clientX - toqueInicio.x, dy = e.clientY - toqueInicio.y;
+    var dt = Date.now() - toqueInicio.t;
+    toqueInicio = null;
+    if (dx * dx + dy * dy > 49 || dt > 500) return;
+    var r = canvas.getBoundingClientRect();
+    ponteiro.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+    ponteiro.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+    raycaster.setFromCamera(ponteiro, camera);
+    var alvos = [];
+    Object.keys(grupos).forEach(function(id){ alvos.push(grupos[id].grupo); });
+    var hits = raycaster.intersectObjects(alvos, true);
+    if (hits.length) {
+      var o = hits[0].object, id = null;
+      while (o) { if (o.userData && o.userData.pecaId) { id = o.userData.pecaId; break; } o = o.parent; }
+      if (id) irPara(id, false);
+    }
+  });
+
+  /* ============ BOTÕES ============ */
+  var btnGirar = document.getElementById('btn-girar');
+  function pararGiro(){
+    if (!controls.autoRotate) return;
+    controls.autoRotate = false;
+    btnGirar.classList.remove('ativo');
+    btnGirar.textContent = '⟳ Parada';
+  }
+  btnGirar.addEventListener('click', function(){
+    controls.autoRotate = !controls.autoRotate;
+    btnGirar.classList.toggle('ativo', controls.autoRotate);
+    btnGirar.textContent = controls.autoRotate ? '⟳ A girar' : '⟳ Parada';
+  });
+  canvas.addEventListener('pointerdown', pararGiro, { once: true });
+
+  function zoom(fator){
+    pararGiro();
+    var pos = camera.position.clone().sub(controls.target);
+    var esf = new THREE.Spherical().setFromVector3(pos);
+    esf.radius = Math.min(controls.maxDistance, Math.max(controls.minDistance, esf.radius * fator));
+    camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(esf));
+  }
+  document.getElementById('btn-zoom-mais').addEventListener('click', function(){ zoom(0.78); });
+  document.getElementById('btn-zoom-menos').addEventListener('click', function(){ zoom(1.28); });
+  document.getElementById('btn-centro').addEventListener('click', function(){
+    pararGiro();
+    atual = 'dayze';
+    document.querySelectorAll('.peca-btn').forEach(function(b){
+      b.classList.toggle('ativo', b.getAttribute('data-peca') === 'dayze');
+    });
+    fichaNome.textContent = 'Dayze';
+    fichaDesc.textContent = PECAS[0].desc;
+    anelSelecao.visible = false;
+    var g = grupos.dayze;
+    var alvo = g ? g.centro.clone() : new THREE.Vector3(0, 1.5, 0);
+    var pos = camera.position.clone().sub(controls.target);
+    var esf = new THREE.Spherical().setFromVector3(pos);
+    var th = esf.theta, destino = Math.PI / 4;
+    while (destino - th > Math.PI) destino -= Math.PI * 2;
+    while (destino - th < -Math.PI) destino += Math.PI * 2;
+    tween = {
+      t: 0,
+      deTarget: controls.target.clone(), paraTarget: alvo,
+      de: { theta: esf.theta, phi: esf.phi, raio: esf.radius },
+      para: { theta: destino, phi: 1.12, raio: 10.5 }
+    };
+  });
+
+  /* ============ LOOP ============ */
+  function tick(){
+    requestAnimationFrame(tick);
+    try {
+      var r = stageBox.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) return;
+      if (tween) {
+        tween.t += 0.04;
+        var k = tween.t >= 1 ? 1 : (1 - Math.pow(1 - tween.t, 3));
+        var theta = tween.de.theta + (tween.para.theta - tween.de.theta) * k;
+        var phi = tween.de.phi + (tween.para.phi - tween.de.phi) * k;
+        var raio = tween.de.raio + (tween.para.raio - tween.de.raio) * k;
+        var alvo = tween.deTarget.clone().lerp(tween.paraTarget, k);
+        controls.target.copy(alvo);
+        var s = new THREE.Spherical(raio, phi, theta);
+        camera.position.copy(alvo).add(new THREE.Vector3().setFromSpherical(s));
+        if (tween.t >= 1) tween = null;
+      }
+      controls.update();
+      renderer.render(scene, camera);
+    } catch(err) { /* mantém o laço vivo */ }
+  }
+  dimensiona();
+  tick();
+})();
+</script>
+</body>
+</html>
